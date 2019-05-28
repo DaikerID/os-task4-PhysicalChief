@@ -2,11 +2,17 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <algorithm>
 #include <set>
+#include <vector>
+#include <string.h>
+#include <cstring>
+#include <iostream>
 using namespace std;
 
 struct client {
@@ -20,9 +26,6 @@ int main()
     struct sockaddr_in addr;
     char buf[1024];
     int bytes_read;
-
-    int sizeClient = 0;
-    vector<long> client(n);
 
     listener = socket(AF_INET, SOCK_STREAM, 0);
     if(listener < 0)
@@ -44,7 +47,7 @@ int main()
 
     struct client client;
     vector<struct client> clientvector;
-    int sizeclient = sizeof(clientvector);
+    unsigned int sizeclient = sizeof(clientvector);
 
     int SIZE_BUF = 1024;
     int bytesSend;
@@ -79,22 +82,23 @@ int main()
                     if (socket != -1) {
                         bytesRecv = recv(socket, recvbuf, SIZE_BUF, 0);
                         clientvector.push_back(client);
+                        cout << "New connecct " + string(inet_ntoa(client.sockAddr.sin_addr)) << endl;
                         if (clientvector.size() > 1) {
                             for (int i = 0; i < clientvector.size() - 2; i++) {
                                 bytesSend = send(clientvector[i].socket, "We have new connect", SIZE_BUF, 0);
-                                bytesSend = send(clientvector[i].socket, client.sockAddr.sin_addr.s_addr, SIZE_BUF, 0);
-                                bytesSend = send(client, clientvector[i].sockAddr.sin_addr.s_addr, SIZE_BUF, 0);
+                                bytesSend = send(clientvector[i].socket, (sockaddr *) &client.sockAddr.sin_addr.s_addr, SIZE_BUF, 0);
+                                bytesSend = send(client.socket, (sockaddr *) &clientvector[i].sockAddr.sin_addr.s_addr, SIZE_BUF, 0);
                             }
                         }
                         else {
-                            
+                            bytesSend = send(clientvector[0].socket, "First connect to server", SIZE_BUF, 0);
                         }
                     }
                 }
             }
-
+            socket = -1;
         }
     }
-    
+    system("pause");
     return 0;
 }
