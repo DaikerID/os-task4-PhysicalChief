@@ -82,6 +82,8 @@ int main(int argc, char * argv[])
             FD_ZERO(&rfds);
             FD_SET(listener, &rfds);
             tv.tv_usec = 0.0;
+            
+            string sendipstring;
             int selectRecv = select(listener+1,&rfds,NULL,NULL,&tv);
 
             if (selectRecv<0){
@@ -105,11 +107,25 @@ int main(int argc, char * argv[])
                         clients.push_back(client);
                         if (clients.size() == 1) {
                             bytesSent = send(socket, "You are first client", SIZE_BUF, 0);
+                            sendipstring = string(inet_ntoa(client.Data.sin_addr));
+                            char *sendip = new char[sendipstring.size()+1];
+                            copy(sendipstring.begin(), sendipstring.end(), sendip);
+                            bytesSent = send(socket, sendip, SIZE_BUF, 0);
+                            delete[] sendip;
                         }
                         else {
-                            for (int i = 0; i < clients.size()-2; i++) {
-                                bytesSent = send(clients[i].socket, inet_ntoa(client.Data.sin_addr), SIZE_BUF, 0);
-                                bytesSent = send(client.socket, inet_ntoa(clients[i].Data.sin_addr), SIZE_BUF, 0);
+                            for (int i =0; i < clients.size() -2; i++) {
+                                sendipstring = string(inet_ntoa(clients[i].Data.sin_addr));
+                                char *sendip = new char[sendipstring.size()+1];
+                                copy(sendipstring.begin(), sendipstring.end(), sendip);
+                                bytesSent = send(clients[i].socket, sendip, SIZE_BUF, 0);
+
+                                sendipstring = string(inet_ntoa(clients[i].Data.sin_addr));
+                                char *sendip2 = new char[sendipstring.size()+1];
+                                copy(sendipstring.begin(), sendipstring.end(), sendip);
+                                bytesSent = send(client.socket, sendip2, SIZE_BUF, 0);
+                                delete sendip;
+                                delete sendip2;
                             }
                         }
                     }
