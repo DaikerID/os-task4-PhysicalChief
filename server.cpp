@@ -94,6 +94,7 @@ int main(int argc, char * argv[])
             else if (selectRecv>0) {
                 cout << endl << "[INFO] New client can connect" << endl;
                 socket = accept(listener, (sockaddr *) &client, &len);
+                client.socket = socket;
                 bytesRecv = recv(socket, recvbuf, SIZE_BUF, 0);
                 if(strstr(recvbuf,"Test")){
                     printf(recvbuf);
@@ -114,7 +115,7 @@ int main(int argc, char * argv[])
                             delete[] sendip;
                         }
                         else {
-                            for (int i =0; i < clients.size() -2; i++) {
+                            for (int i =0; i <= clients.size() -2; i++) {
                                 sendipstring = string(inet_ntoa(clients[i].Data.sin_addr));
                                 char *sendip = new char[sendipstring.size()+1];
                                 copy(sendipstring.begin(), sendipstring.end(), sendip);
@@ -122,7 +123,7 @@ int main(int argc, char * argv[])
 
                                 sendipstring = string(inet_ntoa(clients[i].Data.sin_addr));
                                 char *sendip2 = new char[sendipstring.size()+1];
-                                copy(sendipstring.begin(), sendipstring.end(), sendip);
+                                copy(sendipstring.begin(), sendipstring.end(), sendip2);
                                 bytesSent = send(client.socket, sendip2, SIZE_BUF, 0);
                                 delete sendip;
                                 delete sendip2;
