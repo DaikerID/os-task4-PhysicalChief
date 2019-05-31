@@ -107,7 +107,10 @@ int main(int argc, char * argv[])
                             bytesSent = send(socket, "You are first client", SIZE_BUF, 0);
                         }
                         else {
-                            
+                            for (int i = 0; i < clients.size()-2; i++) {
+                                bytesSent = send(clients[i].socket, inet_ntoa(client.Data.sin_addr), SIZE_BUF, 0);
+                                bytesSent = send(client.socket, inet_ntoa(clients[i].Data.sin_addr), SIZE_BUF, 0);
+                            }
                         }
                     }
                 }
