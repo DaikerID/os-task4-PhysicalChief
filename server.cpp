@@ -13,8 +13,9 @@
 #include <string.h>
 #include <cstring>
 #include <iostream>
+
 using namespace std;
-const int SIZE_BUF = 2048;
+const int SIZE_BUF = 32;
 
 void socket_initialize(int &listener, struct sockaddr_in &addr, char * port){
     listener = socket(AF_INET, SOCK_STREAM, 0);
@@ -43,19 +44,7 @@ struct clientData{
     clientData(){ ; };
     sockaddr_in Data;
     int socket;
-    string password="";
-    int logged = 1;
-    time_t seconds = time(NULL);
 };
-
-int alreadyConnected(clientData& client, vector<clientData>& clients){
-    for(auto c : clients){
-        if((c.Data.sin_addr.s_addr == client.Data.sin_addr.s_addr)&&(c.password!="")){
-            return c.logged;
-        }
-    }
-    return 0;
-}
 
 int main(int argc, char * argv[])
 {
@@ -95,13 +84,6 @@ int main(int argc, char * argv[])
             tv.tv_usec = 0.0;
             int selectRecv = select(listener+1,&rfds,NULL,NULL,&tv);
 
-            for(auto &c : clients){
-                if((time(NULL)-c.seconds>120)&&(c.logged==-1)){
-                    c.logged =2;
-                    bytesSent = send(socket, "Your IP unblocked! You can login now", SIZE_BUF, 0);
-                    cout << endl << "[INFO] IP " << string(inet_ntoa(c.Data.sin_addr))<<" unblocked! You can login now!" << endl;
-                }
-            }
             if (selectRecv<0){
                 cout << "[ERROR] Problem with socket!" << endl;
                 perror("selectsocket");
@@ -120,54 +102,12 @@ int main(int argc, char * argv[])
                     if (socket != -1) {
                         //Записываю IP клиента
                         cout << "[INFO] Connection from " + string(inet_ntoa(client.Data.sin_addr)) << endl;
-                        if (alreadyConnected(client, clients) == 0) {
-                            cout << "[INFO] It seems that we have new user!" << endl;
-                            bytesSent = send(socket, "It seems that we have new user!", SIZE_BUF, 0);
-                            bytesSent = send(socket, "Please, enter password to sign up!", SIZE_BUF, 0);
-                            bytesRecv = recv(socket, recvbuf, SIZE_BUF, 0);
-                            if (bytesRecv > 0) {
-                                clients.push_back(client);
-                                clients[clients.size() - 1].password = recvbuf;
-                                clients[clients.size() - 1].logged = 2;
-
-                                bytesSent = send(socket, "Password created! Welcome to server, client!", SIZE_BUF, 0);
-                            }
-                        } else if (alreadyConnected(client, clients) == 2) {
-                            cout << "[INFO] Welcome back, client!" << endl;
-                            bytesSent = send(socket, "Welcome back, client!", SIZE_BUF, 0);
-                            int n = 3;
-                            for (auto &c: clients) {
-                                if (c.Data.sin_addr.s_addr == client.Data.sin_addr.s_addr) {
-                                    while (n > 0) {
-                                        memset(recvbuf, 0, SIZE_BUF * sizeof(char));
-                                        bytesSent = send(socket, "Please, enter password to sign up!", SIZE_BUF, 0);
-                                        bytesRecv = recv(socket, recvbuf, SIZE_BUF, 0);
-                                        if (c.password == recvbuf) {
-                                            c.logged = 2;
-                                            bytesSent = send(socket, "Password is correct! Welcome to server, client!",
-                                                             SIZE_BUF, 0);
-                                            break;
-                                        } else {
-                                            n--;
-                                            if (n == 0) {
-                                                bytesSent = send(socket,
-                                                                 "You have spent all attempts. Your IP will be blocked for 2 minutes.",
-                                                                 SIZE_BUF, 0);
-                                                c.logged = -1;
-                                                c.seconds = time(NULL);
-                                                break;
-                                            } else {
-                                                bytesSent = send(socket, "Password is incorrect! Please try again!",
-                                                                 SIZE_BUF, 0);
-                                            }
-                                        }
-                                    }
-                                    break;
-                                }
-                            }
-                        } else {
-                            bytesSent = send(socket, "Sorry, but your IP blocked for 2 minutes. Please try again later",
-                                             SIZE_BUF, 0);
+                        clients.push_back(client);
+                        if (clients.size() == 1) {
+                            bytesSent = send(socket, "You are first client", SIZE_BUF, 0);
+                        }
+                        else {
+                            
                         }
                     }
                 }
