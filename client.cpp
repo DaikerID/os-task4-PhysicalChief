@@ -1,60 +1,80 @@
 #include <stdio.h>
-#include "winsock2.h"
 #include <iostream>
+#include <string>
+#include "winsock2.h"
+#include <WS2tcpip.h>
 
-int main()
-{
-	// Initialize Winsock.
-	WSADATA wsaData;
-	int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
-	if (iResult != NO_ERROR)
-		std::cout << "Error at WSAStartup()\n";
+#pragma comment(lib, "ws2_32.lib")
+#pragma warning(disable: 4996)
+using namespace std;
+const int SIZE_BUF = 2048;
 
-	// Create a socket.
-	SOCKET m_socket;
-	m_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+void socket_initialize(WSADATA &wsaData, SOCKET &m_socket, sockaddr_in &clientService, char * ip, char * port) {
+    int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+    if (iResult != NO_ERROR)
+        printf("Error at WSAStartup()\n");
 
-	if (m_socket == INVALID_SOCKET)
-	{
-		std::cout << "Error at socket()\n";
-		WSACleanup();
-		return 1;
-	}
+    m_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (m_socket == INVALID_SOCKET) {
+        printf("Error at socket(): %ld\n", WSAGetLastError());
+        WSACleanup();
+    }
 
-	// Connect to a server.
-	struct sockaddr_in clientService;
+    clientService.sin_family = AF_INET;
+    clientService.sin_addr.s_addr = inet_addr(ip);
+    clientService.sin_port = htons(atoi(port));
 
-	clientService.sin_family = AF_INET;
-	clientService.sin_addr.s_addr = inet_addr("192.168.56.104");
-	clientService.sin_port = htons(3425);
+    if (connect(m_socket, (SOCKADDR*)&clientService, sizeof(clientService)) == SOCKET_ERROR) {
+        cout<<"Failed to connect!" <<endl;
+        WSACleanup();
+    }
+}
 
-	if (connect(m_socket, (SOCKADDR*)&clientService, sizeof(clientService)) == SOCKET_ERROR)
-	{
-		std::cout << "Failed to connect.\n";
-		WSACleanup();
-		return 1;
-	}
 
-	// Send and receive data.
-	int bytesSent;
-	int bytesRecv = SOCKET_ERROR;
-	char sendbuf[32] = "Client: Sending data.";
-	char recvbuf[32] = "";
+char *write_message() {
+    cout << "[CLIENT] ";
+    char message[SIZE_BUF];
+    cin.getline(message, SIZE_BUF, '\n');
+    return message;
+}
 
-	bytesSent = send(m_socket, sendbuf, strlen(sendbuf), 0);
+int main(int argc, char *argv[]) {
+    WSADATA wsaData;
+    SOCKET m_socket;
+    struct sockaddr_in clientService;
+    socket_initialize(wsaData, m_socket, clientService, argv[1], argv[2]);
+    socklen_t len = sizeof(clientService);
+    int bytesSent;
+    int bytesRecv = SOCKET_ERROR;
+    char *sendbuf;
+    char recvbuf[SIZE_BUF];
+    bool connect = false;
+	
+	while (1) {
+        if(!connect) {
+            connect=true;
+            bytesSent = send(m_socket, "Request", 7, 0);
+            if(bytesSent>0){
+                cout<<"Request for connection sent"<<endl;
+            }
+            else{
+                cout<<"Something went wrong, when sending a request"<<endl;
+            }
+        }
+        while(1){
+            int response = recvfrom(m_socket, recvbuf,SIZE_BUF,0,(sockaddr*)&clientService, &len);
+            if(response>0){
+                cout<<"[SERVER] " <<recvbuf <<endl;
+            }
+            else{
+                cout<<"Server is off!";
+                closesocket(m_socket);
+                return 0;
+            }
+        }
 
-	while (1)
-	{
-		bytesRecv = recv(m_socket, recvbuf, 32, 0);
-		if (bytesRecv == 0 || bytesRecv == WSAECONNRESET)
-		{
-			std::cout << "Connection Closed.\n" << std::endl;
-			break;
-		}
-		if (bytesRecv < 0)
-			return 1;
-		std::cout << "[server]" << recvbuf << std::endl;
-	}
-	system("pause");
-	return 0;
+    }
+
+    system("pause");
+    return 0;
 }
