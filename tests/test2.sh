@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 echo "Test 2  arguments test"
-if ! ./LinuxServer/LinuxServer 27015 27015 27015
+if ! ./server 27015 27015 27015
 then
     echo -e "Test passed\n"
 else
