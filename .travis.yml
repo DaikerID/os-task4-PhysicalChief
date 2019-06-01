@@ -15,6 +15,4 @@ addons:
 install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-7" CC="gcc-7"; fi
 script:
-  - mkdir build
-  - cd build
   - g++ ../server.cpp -std=c++11 -o server
