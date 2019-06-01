@@ -30,8 +30,8 @@ int main() {
     struct sockaddr_in clientTest;
     // Bind the socket.
     clientTest.sin_family = AF_INET;
-    clientTest.sin_addr.s_addr = inet_addr("127.0.0.1");//INADDR_ANY позволяет подключиться машине с любым IP
-    clientTest.sin_port = htons(27015);
+    clientTest.sin_addr.s_addr = inet_addr("127.0.0.1");
+    clientTest.sin_port = htons(8321);
     while(connect(sock, (struct sockaddr *)&clientTest, sizeof(clientTest)) < 0){
         if(connect(sock, (struct sockaddr *)&clientTest, sizeof(clientTest)) < 0){
 
